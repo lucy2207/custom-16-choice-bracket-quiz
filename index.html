@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pick Your Favorite — Custom Bracket</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-pink:#FDEBF3;
+    --bg-blue:#EAF3FC;
+    --card-bg:#FFFFFF;
+    --card-border:#F0DCEA;
+    --pink:#FF7FAE;
+    --pink-soft:#FFC1DA;
+    --blue:#6FB8F0;
+    --blue-soft:#BFE0FB;
+    --text-dark:#3B3350;
+    --muted:#8D84A0;
+    --dim:#B7AFC6;
+    --radius-card: 16px;
+    --radius-pill: 999px;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:linear-gradient(135deg, var(--bg-pink) 0%, var(--bg-blue) 100%);
+    color:var(--text-dark);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .screen{
+    width:100%;
+    max-width:1180px;
+    padding:32px 20px 64px;
+    display:none;
+    flex-direction:column;
+    align-items:center;
+    min-height:100vh;
+    justify-content:center;
+  }
+  .screen.active{display:flex;}
+
+  h1,h2,h3{font-family:'Anton',sans-serif;font-weight:400;letter-spacing:0.02em;margin:0;}
+
+  /* ---------- SHARED BUTTONS ---------- */
+  .btn-primary{
+    background:var(--pink);
+    color:#fff;
+    border:none;
+    font-family:'Anton',sans-serif;
+    font-size:20px;
+    letter-spacing:0.03em;
+    padding:16px 48px;
+    border-radius:var(--radius-pill);
+    cursor:pointer;
+    display:inline-block;
+    text-decoration:none;
+    transition:transform .15s ease, box-shadow .15s ease, opacity .15s ease;
+    box-shadow:0 8px 20px rgba(255,127,174,0.35);
+  }
+  .btn-primary:hover{transform:translateY(-2px);}
+  .btn-primary:disabled{
+    opacity:0.4;
+    cursor:not-allowed;
+    transform:none;
+    box-shadow:none;
+  }
+  .btn-outline{
+    background:transparent;
+    color:var(--text-dark);
+    border:2px solid var(--blue-soft);
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:15px;
+    padding:13px 30px;
+    border-radius:var(--radius-pill);
+    cursor:pointer;
+    transition:border-color .15s ease, color .15s ease;
+  }
+  .btn-outline:hover{border-color:var(--blue);color:var(--blue);}
+
+  /* ---------- UPLOAD SCREEN ---------- */
+  .upload-eyebrow{
+    color:var(--pink);
+    font-size:14px;
+    font-weight:600;
+    letter-spacing:0.18em;
+    text-transform:uppercase;
+    margin-bottom:14px;
+  }
+  .upload-title{
+    font-size:clamp(36px,7vw,58px);
+    line-height:1.02;
+    text-align:center;
+    color:var(--text-dark);
+  }
+  .upload-title span{color:var(--pink);}
+  .upload-sub{
+    max-width:520px;
+    text-align:center;
+    color:var(--muted);
+    font-size:16px;
+    line-height:1.6;
+    margin:16px 0 34px;
+  }
+
+  .dropzone{
+    width:100%;
+    max-width:640px;
+    border:2px dashed var(--blue-soft);
+    border-radius:20px;
+    background:rgba(255,255,255,0.55);
+    padding:34px 20px;
+    text-align:center;
+    cursor:pointer;
+    transition:border-color .15s ease, background .15s ease;
+    margin-bottom:24px;
+  }
+  .dropzone:hover, .dropzone.dragover{
+    border-color:var(--pink);
+    background:rgba(255,255,255,0.85);
+  }
+  .dropzone-label{
+    font-weight:600;
+    font-size:16px;
+    color:var(--text-dark);
+    margin-bottom:4px;
+  }
+  .dropzone-sub{
+    font-size:13px;
+    color:var(--dim);
+  }
+
+  .upload-count{
+    font-size:14px;
+    font-weight:700;
+    color:var(--muted);
+    margin-bottom:18px;
+    letter-spacing:0.03em;
+  }
+  .upload-count b{color:var(--pink);}
+
+  .preview-grid{
+    width:100%;
+    max-width:640px;
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    gap:10px;
+    margin-bottom:30px;
+  }
+  .preview-slot{
+    position:relative;
+    aspect-ratio:1/1;
+    border-radius:10px;
+    overflow:hidden;
+    background:var(--card-bg);
+    border:1px solid var(--card-border);
+  }
+  .preview-slot img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+  }
+  .preview-remove{
+    position:absolute;
+    top:4px;
+    right:4px;
+    width:22px;
+    height:22px;
+    border-radius:50%;
+    background:rgba(59,51,80,0.75);
+    color:#fff;
+    border:none;
+    font-size:13px;
+    line-height:1;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .preview-slot.empty{
+    background:rgba(255,255,255,0.35);
+    border-style:dashed;
+  }
+
+  .upload-actions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:14px;
+    justify-content:center;
+    align-items:center;
+  }
+
+  /* ---------- GAME SCREEN ---------- */
+  .game-top{
+    width:100%;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    margin-bottom:36px;
+  }
+  .round-label{
+    font-size:13px;
+    font-weight:700;
+    letter-spacing:0.18em;
+    text-transform:uppercase;
+    color:var(--pink);
+    margin-bottom:6px;
+  }
+  .match-count{
+    font-size:13px;
+    color:var(--muted);
+    margin-bottom:16px;
+  }
+  .progress-track{
+    width:100%;
+    max-width:360px;
+    height:4px;
+    background:var(--card-border);
+    border-radius:2px;
+    overflow:hidden;
+  }
+  .progress-fill{
+    height:100%;
+    background:linear-gradient(90deg, var(--pink), var(--blue));
+    width:0%;
+    transition:width .4s ease;
+  }
+
+  .prompt{
+    font-size:clamp(28px,5vw,42px);
+    text-align:center;
+    margin-bottom:40px;
+    color:var(--text-dark);
+  }
+
+  .matchup{
+    width:100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:0;
+    position:relative;
+  }
+  .pick-card{
+    background:var(--card-bg);
+    border:2px solid var(--card-border);
+    border-radius:var(--radius-card);
+    padding:14px;
+    width:min(440px,42vw);
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition:transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+    box-shadow:0 6px 18px rgba(59,51,80,0.06);
+  }
+  .pick-card:hover{
+    border-color:var(--pink);
+    transform:translateY(-6px);
+    box-shadow:0 14px 30px rgba(255,127,174,0.25);
+  }
+  .pick-card:focus-visible{
+    outline:3px solid var(--pink);
+    outline-offset:3px;
+  }
+  .pick-card img{
+    width:100%;
+    aspect-ratio:1/1;
+    object-fit:contain;
+    border-radius:10px;
+  }
+
+  .vs-badge{
+    flex:0 0 auto;
+    width:76px;
+    height:76px;
+    border-radius:50%;
+    background:linear-gradient(135deg, var(--pink), var(--blue));
+    color:#fff;
+    font-family:'Anton',sans-serif;
+    font-size:22px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    margin:0 -6px;
+    z-index:2;
+    box-shadow:0 0 0 8px var(--bg-pink);
+  }
+
+  @media (max-width:640px){
+    .matchup{flex-direction:column;gap:20px;}
+    .pick-card{width:min(380px,86vw);}
+    .vs-badge{margin:-14px 0;}
+    .preview-grid{grid-template-columns:repeat(4, 1fr);}
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    .pick-card, .btn-primary, .progress-fill{transition:none;}
+  }
+
+  /* ---------- RESULTS SCREEN ---------- */
+  .results-title{
+    font-size:clamp(30px,6vw,44px);
+    text-align:center;
+    margin-bottom:6px;
+  }
+  .results-sub{
+    color:var(--muted);
+    font-size:15px;
+    margin-bottom:36px;
+    text-align:center;
+  }
+
+  .champion-card{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    margin-bottom:44px;
+  }
+  .champion-crown{
+    color:var(--pink);
+    font-size:13px;
+    font-weight:700;
+    letter-spacing:0.18em;
+    text-transform:uppercase;
+    margin-bottom:14px;
+  }
+  .champion-img-wrap{
+    width:300px;
+    height:300px;
+    border-radius:22px;
+    background:var(--card-bg);
+    border:4px solid var(--pink);
+    box-shadow:0 0 50px rgba(111,184,240,0.35);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:18px;
+  }
+  .champion-img-wrap img{width:100%;height:100%;object-fit:contain;border-radius:12px;}
+
+  .trail{
+    width:100%;
+    max-width:520px;
+    position:relative;
+    padding-left:26px;
+  }
+  .trail::before{
+    content:"";
+    position:absolute;
+    left:9px;
+    top:10px;
+    bottom:10px;
+    width:2px;
+    background:var(--card-border);
+  }
+  .trail-row{
+    position:relative;
+    display:flex;
+    align-items:center;
+    gap:14px;
+    padding:14px 0;
+  }
+  .trail-row::before{
+    content:"";
+    position:absolute;
+    left:-26px;
+    top:50%;
+    transform:translateY(-50%);
+    width:11px;
+    height:11px;
+    border-radius:50%;
+    background:var(--pink);
+    box-shadow:0 0 0 4px var(--bg-pink);
+  }
+  .trail-round-label{
+    position:absolute;
+    left:-26px;
+    top:-2px;
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--dim);
+  }
+  .trail-thumb{
+    width:64px;
+    height:64px;
+    border-radius:12px;
+    object-fit:cover;
+    background:var(--card-bg);
+    flex:0 0 auto;
+  }
+  .trail-beaten{opacity:0.4;}
+  .trail-beaten .trail-thumb{border:1px solid var(--card-border);}
+  .trail-winner .trail-thumb{border:2px solid var(--pink);}
+  .trail-arrow{color:var(--dim);font-size:18px;}
+
+  .results-actions{
+    margin-top:44px;
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:16px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ================= UPLOAD SCREEN ================= -->
+<section id="upload-screen" class="screen active">
+  <div class="upload-eyebrow">Custom Bracket</div>
+  <h1 class="upload-title">Upload sixteen.<br>Crown <span>one</span>.</h1>
+  <p class="upload-sub">Add 16 images of anything you want — outfits, snacks, vacation spots, whatever. Every round you'll pick your favorite of two, until only one is left.</p>
+
+  <label class="dropzone" id="dropzone" for="image-input">
+    <div class="dropzone-label">Click to upload, or drag & drop images here</div>
+    <div class="dropzone-sub">JPG, PNG, WEBP, GIF — any 16 images</div>
+  </label>
+  <input type="file" id="image-input" accept="image/*" multiple style="display:none;">
+
+  <div class="upload-count"><b id="upload-count-num">0</b> / 16 images added</div>
+
+  <div class="preview-grid" id="preview-grid"></div>
+
+  <div class="upload-actions">
+    <button class="btn-primary" id="start-btn" disabled>Start the Bracket</button>
+    <button class="btn-outline" id="clear-btn">Clear all</button>
+  </div>
+</section>
+
+<!-- ================= GAME SCREEN ================= -->
+<section id="game-screen" class="screen">
+  <div class="game-top">
+    <div class="round-label" id="round-label">Round of 16</div>
+    <div class="match-count" id="match-count">Pick 1 of 15</div>
+    <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+  </div>
+  <h2 class="prompt">Which do you prefer?</h2>
+  <div class="matchup" id="matchup">
+    <!-- pick cards injected by JS -->
+  </div>
+</section>
+
+<!-- ================= RESULTS SCREEN ================= -->
+<section id="results-screen" class="screen">
+  <h2 class="results-title">Your favorite</h2>
+  <p class="results-sub">Here's the road it took to get there.</p>
+
+  <div class="champion-card">
+    <div class="champion-crown">Champion</div>
+    <div class="champion-img-wrap"><img id="champion-img" alt="Champion"></div>
+  </div>
+
+  <div class="trail" id="trail"></div>
+
+  <div class="results-actions">
+    <button class="btn-primary" id="again-btn">Play again</button>
+    <button class="btn-outline" id="new-images-btn">Upload new images</button>
+  </div>
+</section>
+
+<script>
+/* =========================================================
+   STATE
+   Images live only in memory as data URLs — nothing is
+   ever uploaded anywhere, and nothing persists after the
+   page is closed or refreshed.
+   ========================================================= */
+const MAX_IMAGES = 16;
+let images = []; // { id, dataUrl }
+let nextId = 1;
+
+const ROUND_NAMES = ["Round of 16", "Elite 8", "Final 4", "Championship"];
+const TOTAL_MATCHES = 15; // 8 + 4 + 2 + 1
+
+let state = {
+  roundIndex: 0,
+  players: [],
+  matches: [],
+  matchIndex: 0,
+  winners: [],
+  pickLog: [],
+  matchesPlayed: 0,
+};
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function showScreen(id) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+
+/* ---------------- UPLOAD SCREEN ---------------- */
+const dropzone = document.getElementById("dropzone");
+const imageInput = document.getElementById("image-input");
+const previewGrid = document.getElementById("preview-grid");
+const uploadCountNum = document.getElementById("upload-count-num");
+const startBtn = document.getElementById("start-btn");
+
+function handleFiles(fileList) {
+  const files = Array.from(fileList).filter(f => f.type.startsWith("image/"));
+  const room = MAX_IMAGES - images.length;
+  files.slice(0, room).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      images.push({ id: nextId++, dataUrl: e.target.result });
+      renderPreview();
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function renderPreview() {
+  uploadCountNum.textContent = images.length;
+  previewGrid.innerHTML = "";
+
+  images.forEach(img => {
+    const slot = document.createElement("div");
+    slot.className = "preview-slot";
+
+    const image = document.createElement("img");
+    image.src = img.dataUrl;
+    slot.appendChild(image);
+
+    const removeBtn = document.createElement("button");
+    removeBtn.className = "preview-remove";
+    removeBtn.textContent = "×";
+    removeBtn.setAttribute("aria-label", "Remove image");
+    removeBtn.onclick = () => {
+      images = images.filter(i => i.id !== img.id);
+      renderPreview();
+    };
+    slot.appendChild(removeBtn);
+
+    previewGrid.appendChild(slot);
+  });
+
+  for (let i = images.length; i < MAX_IMAGES; i++) {
+    const empty = document.createElement("div");
+    empty.className = "preview-slot empty";
+    previewGrid.appendChild(empty);
+  }
+
+  startBtn.disabled = images.length !== MAX_IMAGES;
+}
+
+imageInput.addEventListener("change", e => {
+  handleFiles(e.target.files);
+  imageInput.value = "";
+});
+
+dropzone.addEventListener("dragover", e => {
+  e.preventDefault();
+  dropzone.classList.add("dragover");
+});
+dropzone.addEventListener("dragleave", () => dropzone.classList.remove("dragover"));
+dropzone.addEventListener("drop", e => {
+  e.preventDefault();
+  dropzone.classList.remove("dragover");
+  handleFiles(e.dataTransfer.files);
+});
+
+document.getElementById("clear-btn").addEventListener("click", () => {
+  images = [];
+  renderPreview();
+});
+
+renderPreview();
+
+/* ---------------- BRACKET GAME ---------------- */
+function startGame() {
+  state = {
+    roundIndex: 0,
+    players: shuffle(images),
+    matches: [],
+    matchIndex: 0,
+    winners: [],
+    pickLog: [],
+    matchesPlayed: 0,
+  };
+  buildRound();
+  showScreen("game-screen");
+}
+
+function buildRound() {
+  const shuffledPlayers = shuffle(state.players);
+  state.matches = [];
+  for (let i = 0; i < shuffledPlayers.length; i += 2) {
+    state.matches.push([shuffledPlayers[i], shuffledPlayers[i + 1]]);
+  }
+  state.matchIndex = 0;
+  state.winners = [];
+  renderMatch();
+}
+
+function renderMatch() {
+  document.getElementById("round-label").textContent = ROUND_NAMES[state.roundIndex];
+  document.getElementById("match-count").textContent =
+    `Pick ${state.matchesPlayed + 1} of ${TOTAL_MATCHES}`;
+  document.getElementById("progress-fill").style.width =
+    `${(state.matchesPlayed / TOTAL_MATCHES) * 100}%`;
+
+  const [left, right] = state.matches[state.matchIndex];
+  const container = document.getElementById("matchup");
+  container.innerHTML = "";
+  container.appendChild(makeCard(left));
+
+  const vs = document.createElement("div");
+  vs.className = "vs-badge";
+  vs.textContent = "VS";
+  container.appendChild(vs);
+
+  container.appendChild(makeCard(right));
+}
+
+function makeCard(player) {
+  const btn = document.createElement("button");
+  btn.className = "pick-card";
+  btn.setAttribute("aria-label", "Choose this image");
+
+  const img = document.createElement("img");
+  img.src = player.dataUrl;
+  img.alt = "";
+
+  btn.appendChild(img);
+  btn.onclick = () => choose(player, player === state.matches[state.matchIndex][0]
+    ? state.matches[state.matchIndex][1]
+    : state.matches[state.matchIndex][0]);
+  return btn;
+}
+
+function choose(winner, loser) {
+  state.pickLog.push({ round: state.roundIndex, winner, loser });
+  state.winners.push(winner);
+  state.matchesPlayed++;
+  state.matchIndex++;
+
+  if (state.matchIndex < state.matches.length) {
+    renderMatch();
+  } else if (state.winners.length === 1) {
+    finishTournament(state.winners[0]);
+  } else {
+    state.players = state.winners;
+    state.roundIndex++;
+    buildRound();
+  }
+}
+
+function finishTournament(champion) {
+  document.getElementById("progress-fill").style.width = "100%";
+  renderResults(champion);
+  showScreen("results-screen");
+}
+
+function renderResults(champion) {
+  document.getElementById("champion-img").src = champion.dataUrl;
+
+  const trail = document.getElementById("trail");
+  trail.innerHTML = "";
+
+  const path = state.pickLog
+    .filter(entry => entry.winner.id === champion.id)
+    .sort((a, b) => a.round - b.round);
+
+  path.forEach(entry => {
+    const row = document.createElement("div");
+    row.className = "trail-row";
+
+    const roundLabel = document.createElement("div");
+    roundLabel.className = "trail-round-label";
+    roundLabel.textContent = ROUND_NAMES[entry.round];
+    row.appendChild(roundLabel);
+
+    row.appendChild(trailSide(entry.loser, false));
+
+    const arrow = document.createElement("div");
+    arrow.className = "trail-arrow";
+    arrow.textContent = "beat";
+    row.appendChild(arrow);
+
+    row.appendChild(trailSide(entry.winner, true));
+
+    trail.appendChild(row);
+  });
+}
+
+function trailSide(player, isWinner) {
+  const wrap = document.createElement("div");
+  wrap.className = isWinner ? "trail-winner" : "trail-beaten";
+
+  const img = document.createElement("img");
+  img.className = "trail-thumb";
+  img.src = player.dataUrl;
+  img.alt = "";
+
+  wrap.appendChild(img);
+  return wrap;
+}
+
+startBtn.addEventListener("click", startGame);
+document.getElementById("again-btn").addEventListener("click", startGame);
+document.getElementById("new-images-btn").addEventListener("click", () => {
+  images = [];
+  renderPreview();
+  showScreen("upload-screen");
+});
+</script>
+</body>
+</html>
